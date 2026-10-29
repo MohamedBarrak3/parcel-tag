@@ -1,22 +1,15 @@
-import { useEffect, useState } from 'react'
-import { getBoxes } from './api'
+import { useState } from 'react'
+import BoxDetail from './components/BoxDetail'
+import BoxList from './components/BoxList'
 
 function App() {
-  const [boxes, setBoxes] = useState([])
+  const [selectedBoxId, setSelectedBoxId] = useState(null)
 
-  useEffect(() => {
-    getBoxes().then(setBoxes)
-  }, [])
+  if (selectedBoxId) {
+    return <BoxDetail boxId={selectedBoxId} onBack={() => setSelectedBoxId(null)} />
+  }
 
-  return (
-    <ul>
-      {boxes.map((box) => (
-        <li key={box.box_id}>
-          {box.box_id} - {box.status} - {box.current_holder ? box.current_holder.name : 'unassigned'}
-        </li>
-      ))}
-    </ul>
-  )
+  return <BoxList onSelect={setSelectedBoxId} />
 }
 
 export default App
