@@ -55,3 +55,65 @@ def test_9_temp_breach_after_tap_b_is_warning():
     r, _ = run(tap(1, 1000, B), ev(2, 3000, "temp_breach"))
     assert r[2].severity == "warning"
     assert r[2].holder_badge_id == B
+
+
+# ---- Tests 7 and 8: the full upload, with a temporary in-memory database ----
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from app.main import app
+from app.models import Base, Event
+from app.routes import get_db
+
+def make_client():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
+                           poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine, autoflush=False)
+
+    def test_db():
+        db = Session()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = test_db
+    return TestClient(app), Session
+
+def rows(Session):
+    db = Session()
+    out = [(e.seq, e.type, e.holder_badge_id, e.severity)
+           for e in db.scalars(select(Event).order_by(Event.seq))]
+    db.close()
+    return out
+
+def upload(client, events, at=20000):
+    return client.post("/api/upload", json={
+        "box_id": "B001", "uploaded_at_uptime_ms": at, "events": events})
+
+STORY = [
+    {"seq": 1, "uptime_ms": 1000, "type": "tap", "badge_id": "A"},
+    {"seq": 2, "uptime_ms": 5000, "type": "tap", "badge_id": "B"},
+    {"seq": 3, "uptime_ms": 9000, "type": "drop", "height_m": 0.8},
+    {"seq": 4, "uptime_ms": 12000, "type": "tamper"},
+]
+
+def test_7_same_upload_twice_changes_nothing():
+    client, Session = make_client()
+    assert upload(client, STORY).json() == {"ack_seq": 4}
+    first = rows(Session)
+    assert upload(client, STORY).json() == {"ack_seq": 4}
+    assert rows(Session) == first
+    assert len(first) == 4
+
+def test_8_split_upload_gives_same_result():
+    client, Session = make_client()
+    upload(client, STORY)
+    one_upload = rows(Session)
+
+    client, Session = make_client()
+    upload(client, STORY[:2], at=6000)
+    upload(client, STORY[2:], at=20000)
+    assert rows(Session) == one_upload
