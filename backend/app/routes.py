@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from app.models import SessionLocal, Box, Event
+from app.models import SessionLocal, Box, Event, Handler
+from app.custody import apply_custody
 
 router = APIRouter(prefix="/api")
 
@@ -57,6 +58,12 @@ def upload(body: UploadIn, db: Session = Depends(get_db)):
             type=e.type, conf=e.conf, height_m=e.height_m,
             temp_c=e.temp_c, hum_pct=e.hum_pct, badge_id=e.badge_id,
         ))
+    db.flush()
+
+    # Judge all events of this box again, in seq order
+    all_events = db.scalars(select(Event).where(Event.box_id == body.box_id)).all()
+    roles = {h.badge_id: h.role for h in db.scalars(select(Handler))}
+    apply_custody(all_events, roles)
     db.commit()
 
     ack = db.scalar(select(func.max(Event.seq)).where(Event.box_id == body.box_id))
