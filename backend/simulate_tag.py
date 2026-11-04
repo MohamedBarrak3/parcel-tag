@@ -1,8 +1,8 @@
 import argparse
 import httpx
 
-# Placeholder badge UIDs until Sarah reads the real cards
-A, B, C = "04A1A1A1", "04B2B2B2", "04C3C3C3"
+# Real demo badges read by Sarah
+A, B, C = "17733800", "4BBEF804", "53A0B3A7"
 
 def ev(box, seq, uptime_ms, type, temp=24.0, **extra):
     e = {"box_id": box, "seq": seq, "uptime_ms": uptime_ms, "type": type,

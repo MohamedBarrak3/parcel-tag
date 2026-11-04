@@ -105,7 +105,7 @@ def iso(dt):
         return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.isoformat()
+    return dt.isoformat().replace("+00:00", "Z")
 
 def person(badge_id, handlers):
     """Badge id to {badge_id, name, role}, or None if nobody."""
