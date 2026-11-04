@@ -140,3 +140,40 @@ def list_boxes(db: Session = Depends(get_db)):
             "current_holder": person(last.holder_badge_id, handlers) if last else None,
         })
     return result
+
+
+from fastapi import HTTPException
+from app.custody import liable
+
+@router.get("/boxes/{box_id}/timeline")
+def timeline(box_id: str, db: Session = Depends(get_db)):
+    if db.get(Box, box_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown box")
+
+    handlers = {h.badge_id: h for h in db.scalars(select(Handler))}
+    events = db.scalars(
+        select(Event).where(Event.box_id == box_id).order_by(Event.seq)
+    ).all()
+
+    return {
+        "box_id": box_id,
+        "status": box_status(events),
+        "liable": [
+            {"badge_id": l["badge_id"],
+             "name": person(l["badge_id"], handlers)["name"],
+             "reason": l["reason"]}
+            for l in liable(events)
+        ],
+        "events": [
+            {"seq": e.seq,
+             "time": iso(e.event_time),
+             "type": e.type,
+             "severity": e.severity,
+             "height_m": e.height_m,
+             "temp_c": e.temp_c,
+             "hum_pct": e.hum_pct,
+             "holder": person(e.holder_badge_id, handlers),
+             "expected": e.expected}
+            for e in events
+        ],
+    }
