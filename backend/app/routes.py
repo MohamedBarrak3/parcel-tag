@@ -97,3 +97,46 @@ def reset(db: Session = Depends(get_db)):
     db.execute(delete(Box))
     db.commit()
     return {"status": "reset"}
+
+
+def iso(dt):
+    """Time as ISO 8601 text, marked as UTC."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+def person(badge_id, handlers):
+    """Badge id to {badge_id, name, role}, or None if nobody."""
+    if badge_id is None:
+        return None
+    h = handlers.get(badge_id)
+    if h is None:
+        return {"badge_id": badge_id, "name": "Unknown badge", "role": None}
+    return {"badge_id": h.badge_id, "name": h.name, "role": h.role}
+
+def box_status(events):
+    severities = {e.severity for e in events if not e.expected}
+    if "severe" in severities:
+        return "severe"
+    if "warning" in severities:
+        return "warning"
+    return "ok"
+
+@router.get("/boxes")
+def list_boxes(db: Session = Depends(get_db)):
+    handlers = {h.badge_id: h for h in db.scalars(select(Handler))}
+    result = []
+    for box in db.scalars(select(Box).order_by(Box.box_id)):
+        events = db.scalars(
+            select(Event).where(Event.box_id == box.box_id).order_by(Event.seq)
+        ).all()
+        last = events[-1] if events else None
+        result.append({
+            "box_id": box.box_id,
+            "status": box_status(events),
+            "last_event_time": iso(last.event_time) if last else None,
+            "current_holder": person(last.holder_badge_id, handlers) if last else None,
+        })
+    return result
