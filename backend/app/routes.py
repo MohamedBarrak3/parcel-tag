@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.orm import Session
 from app.models import SessionLocal, Box, Event, Handler
 from app.custody import apply_custody
@@ -16,7 +16,14 @@ def get_db():
     finally:
         db.close()
 
+def rejudge(db, box_id):
+    """Run the custody rules again on all events of one box."""
+    events = db.scalars(select(Event).where(Event.box_id == box_id)).all()
+    roles = {h.badge_id: h.role for h in db.scalars(select(Handler))}
+    apply_custody(events, roles)
+
 EventType = Literal["tap", "drop", "impact", "upside_down", "tamper", "temp_breach"]
+Role = Literal["warehouse", "driver", "client"]
 
 class EventIn(BaseModel):
     box_id: str | None = None
@@ -33,6 +40,11 @@ class UploadIn(BaseModel):
     box_id: str
     uploaded_at_uptime_ms: int
     events: list[EventIn]
+
+class HandlerIn(BaseModel):
+    badge_id: str
+    name: str
+    role: Role
 
 @router.get("/health")
 def health():
@@ -59,12 +71,29 @@ def upload(body: UploadIn, db: Session = Depends(get_db)):
             temp_c=e.temp_c, hum_pct=e.hum_pct, badge_id=e.badge_id,
         ))
     db.flush()
-
-    # Judge all events of this box again, in seq order
-    all_events = db.scalars(select(Event).where(Event.box_id == body.box_id)).all()
-    roles = {h.badge_id: h.role for h in db.scalars(select(Handler))}
-    apply_custody(all_events, roles)
+    rejudge(db, body.box_id)
     db.commit()
 
     ack = db.scalar(select(func.max(Event.seq)).where(Event.box_id == body.box_id))
     return {"ack_seq": ack or 0}
+
+@router.get("/handlers")
+def list_handlers(db: Session = Depends(get_db)):
+    return [{"badge_id": h.badge_id, "name": h.name, "role": h.role}
+            for h in db.scalars(select(Handler))]
+
+@router.post("/handlers")
+def add_handler(body: HandlerIn, db: Session = Depends(get_db)):
+    db.merge(Handler(badge_id=body.badge_id, name=body.name, role=body.role))
+    db.flush()
+    for box_id in db.scalars(select(Box.box_id)):
+        rejudge(db, box_id)
+    db.commit()
+    return body
+
+@router.post("/reset")
+def reset(db: Session = Depends(get_db)):
+    db.execute(delete(Event))
+    db.execute(delete(Box))
+    db.commit()
+    return {"status": "reset"}
