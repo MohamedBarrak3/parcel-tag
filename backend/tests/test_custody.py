@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from app.custody import apply_custody, liable
 
 A, B, C = "A", "B", "C"
 ROLES = {A: "warehouse", B: "driver", C: "client"}
+BASE = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 @dataclass
 class Ev:
@@ -14,12 +16,13 @@ class Ev:
     holder_badge_id: str | None = None
     severity: str | None = None
     expected: bool = False
+    event_time: datetime | None = None
 
 def tap(seq, t, badge):
-    return Ev(seq, t, "tap", badge_id=badge)
+    return Ev(seq, t, "tap", badge_id=badge, event_time=BASE + timedelta(milliseconds=t))
 
 def ev(seq, t, type, height=None):
-    return Ev(seq, t, type, height_m=height)
+    return Ev(seq, t, type, height_m=height, event_time=BASE + timedelta(milliseconds=t))
 
 def run(*events):
     result, handovers = apply_custody(list(events), ROLES)
@@ -57,7 +60,7 @@ def test_9_temp_breach_after_tap_b_is_warning():
     assert r[2].holder_badge_id == B
 
 
-# ---- Tests 7 and 8: the full upload, with a temporary in-memory database ----
+# ---- Tests 7, 8 and 10: the full upload, with a temporary in-memory database ----
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -117,3 +120,15 @@ def test_8_split_upload_gives_same_result():
     upload(client, STORY[:2], at=6000)
     upload(client, STORY[2:], at=20000)
     assert rows(Session) == one_upload
+
+def test_10_event_from_before_reboot_gets_receive_time():
+    client, Session = make_client()
+    before = datetime.now(timezone.utc).replace(tzinfo=None)
+    # uptime 50 s but the tag uploads at 3 s: it rebooted in between
+    upload(client, [{"seq": 1, "uptime_ms": 50000, "type": "drop", "height_m": 0.5}], at=3000)
+    after = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    db = Session()
+    e = db.scalars(select(Event)).one()
+    db.close()
+    assert before <= e.event_time <= after

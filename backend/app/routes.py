@@ -66,7 +66,7 @@ def upload(body: UploadIn, db: Session = Depends(get_db)):
         ago_ms = body.uploaded_at_uptime_ms - e.uptime_ms
         db.add(Event(
             box_id=body.box_id, seq=e.seq, uptime_ms=e.uptime_ms,
-            event_time=received - timedelta(milliseconds=ago_ms),
+            event_time=received if ago_ms < 0 else received - timedelta(milliseconds=ago_ms),  # ago_ms < 0: event from before a reboot
             type=e.type, conf=e.conf, height_m=e.height_m,
             temp_c=e.temp_c, hum_pct=e.hum_pct, badge_id=e.badge_id,
         ))

@@ -1,7 +1,7 @@
 """Custody and severity rules from the Contracts. No database access."""
 
 DROP_SEVERE_M = 0.30          # Sarah will tune this
-SAME_TAP_IGNORE_MS = 2000
+SAME_TAP_IGNORE_S = 2.0
 
 def severity_of(e):
     if e.type == "tap":
@@ -16,12 +16,12 @@ def severity_of(e):
 
 def apply_custody(events, roles):
     """Fill holder_badge_id, expected and severity on each event.
-    events: objects with seq, uptime_ms, type, height_m, badge_id.
+    events: objects with seq, event_time, type, height_m, badge_id.
     roles: {badge_id: role}.
     Returns (events sorted by seq, list of handovers as (seq, badge_id))."""
     events = sorted(events, key=lambda e: e.seq)
     holder = None
-    last_tap = None          # (badge_id, uptime_ms) of the last accepted tap
+    last_tap = None          # (badge_id, event_time) of the last accepted tap
     handovers = []
 
     for e in events:
@@ -29,11 +29,13 @@ def apply_custody(events, roles):
             same_badge_soon = (
                 last_tap is not None
                 and last_tap[0] == e.badge_id
-                and e.uptime_ms - last_tap[1] < SAME_TAP_IGNORE_MS
+                and e.event_time is not None
+                and last_tap[1] is not None
+                and abs((e.event_time - last_tap[1]).total_seconds()) < SAME_TAP_IGNORE_S
             )
             if not same_badge_soon:
                 holder = e.badge_id
-                last_tap = (e.badge_id, e.uptime_ms)
+                last_tap = (e.badge_id, e.event_time)
                 handovers.append((e.seq, e.badge_id))
             e.holder_badge_id = holder
             e.expected = False
