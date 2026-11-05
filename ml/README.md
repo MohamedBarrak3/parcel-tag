@@ -35,3 +35,26 @@ Setup (once, from the repo root):
 3. Export the data from Edge Impulse (Data acquisition → Export data) and unzip it into `ml\ei_export\` (git-ignored), keeping `info.labels`.
 
 Run: `ml\venv\Scripts\python.exe ml\baseline.py` (add `--all` for train+test).
+
+## v2 hybrid
+
+- Approach: drop = free-fall rule in the firmware (|a| < 4.9 m/s² for at least 15 samples = 150 ms, about 11 cm of fall, followed by a spike > 30 m/s²); the model classifies carried / impact / upside_down. Drop samples were relabeled as impact for training (a drop ends with an impact spike).
+- Free-fall tuning on training data only (`ml/tune_freefall.py`): N = 15 keeps 91.2% of drops while impacts wrongly called drop fall from 42.4% (N = 10) to 2.1%.
+
+| N | Min fall | Min height | Drop → drop | Impact → drop | Carried/upside_down → drop |
+|---|---|---|---|---|---|
+| 8 | 80 ms | 0.03 m | 99.1% | 52.1% | 0.0% |
+| 10 | 100 ms | 0.05 m | 99.1% | 42.4% | 0.0% |
+| **15** | **150 ms** | **0.11 m** | **91.2%** | **2.1%** | **0.0%** |
+| 20 | 200 ms | 0.20 m | 57.9% | 2.1% | 0.0% |
+| 25 | 250 ms | 0.31 m | 44.7% | 2.1% | 0.0% |
+| 30 | 300 ms | 0.44 m | 31.6% | 1.4% | 0.0% |
+| 35 | 350 ms | 0.60 m | 18.4% | 1.4% | 0.0% |
+| 40 | 400 ms | 0.78 m | 7.9% | 1.4% | 0.0% |
+
+- Rule on the test set with N = 15 (`ml/baseline.py --min-freefall 15`): 95.5% overall; carried 100%, drop 88.9%, impact 88.2%, upside_down 100%.
+- 3-class model, int8 test results: overall accuracy 91.04%; carried 91.9%, impact 89.7%, upside_down 91.7%; F1 0.95 / 0.95 / 0.71 (upside_down has only 2 test samples). Impact improved from 51.0% (v1) to 89.7%.
+- Validation accuracy during training was 96.7% (carried 94.2%, impact 100%, upside_down 100%), but the test numbers are the ones we report.
+- On-device (Edge Impulse, ESP32 240 MHz, int8, EON): classifier 1 ms, 1.4 KB peak RAM, 15.8 KB flash; the spectral features step adds about 86 ms.
+- Figures: docs/confusion_matrix_v2.png, docs/accuracy_v2.png. Edge Impulse version: "v2 hybrid 3 classes int8".
+- v2 Arduino library not exported yet (the zip in ml/ is still v1).
