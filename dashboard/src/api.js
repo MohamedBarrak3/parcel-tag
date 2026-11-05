@@ -1,10 +1,23 @@
-import mockBoxes from './mock/boxes.json'
-import mockTimelines from './mock/timelines.json'
+import rawMockBoxes from './mock/boxes.json'
+import rawMockTimelines from './mock/timelines.json'
 
 const API_URL = import.meta.env.VITE_API_URL
 
 // Without VITE_API_URL the dashboard shows the mock data in src/mock/
 export const MOCK_MODE = !API_URL
+
+// Mock times are moved so the newest mock event happened 1 minute ago
+const newestMock = Math.max(...rawMockBoxes.map((b) => Date.parse(b.last_event_time) || 0))
+const mockShiftMs = Date.now() - 60_000 - newestMock
+const shift = (iso) => iso && new Date(Date.parse(iso) + mockShiftMs).toISOString()
+
+const mockBoxes = rawMockBoxes.map((b) => ({ ...b, last_event_time: shift(b.last_event_time) }))
+const mockTimelines = Object.fromEntries(
+  Object.entries(rawMockTimelines).map(([id, t]) => [
+    id,
+    { ...t, events: t.events.map((e) => ({ ...e, time: shift(e.time) })) },
+  ]),
+)
 
 // An error with the HTTP status (0 means the backend could not be reached)
 export class ApiError extends Error {

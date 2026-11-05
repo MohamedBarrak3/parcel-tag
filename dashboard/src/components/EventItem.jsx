@@ -1,3 +1,5 @@
+import HolderTag from './HolderTag'
+
 const TYPE_LABELS = {
   tap: 'Badge tap',
   drop: 'Drop',
@@ -20,10 +22,6 @@ const SEVERITY_DOT = {
 }
 
 function EventItem({ event }) {
-  const holderText = !event.holder
-    ? 'Unassigned'
-    : `${event.holder.name || 'Unknown badge'} (${event.holder.role})`
-
   const isTempBreach = event.type === 'temp_breach'
 
   return (
@@ -54,7 +52,7 @@ function EventItem({ event }) {
         </span>
       </div>
 
-      <div className="text-xl text-gray-800">{holderText}</div>
+      <HolderTag holder={event.holder} />
 
       <div className="flex gap-6 text-lg text-gray-600">
         {event.temp_c != null && event.hum_pct != null && (
