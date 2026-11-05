@@ -9,3 +9,23 @@
 - float32 gives the same accuracy (78.61%) but 89 ms and 17.7 KB classifier flash, so int8 was chosen.
 - Figures: docs/confusion_matrix_test.png and docs/accuracy_per_class.png
 - Deployment: Arduino library, quantized int8, EON Compiler, zip in ml/.
+
+## Baseline vs model
+
+Rule-based baseline (`ml/baseline.py`) on the same 31 test samples, cut into 2 s windows with a 0.5 s step.
+
+| Class | Rules (baseline) | Edge Impulse model (int8) |
+|---|---|---|
+| carried | 100% | 93.7% |
+| drop | 100% | 66.7% |
+| impact | 58.8% | 51.0% |
+| upside_down | 100% | 83.3% |
+| Overall (windows) | 89.6% | 78.6% |
+| Mean of 4 classes | 89.7% | 73.7% |
+
+1. Both confuse impact with drop: 21/51 impact windows contain ≥8 samples below 4.9 m/s² before the spike, so the impact recordings likely include a short free fall.
+2. The free-fall rule is a strong physical signal for drops, while the model has little drop data.
+3. Not a strictly equal comparison: window cutting differs, Edge Impulse counts "uncertain" as wrong, and carried dominates the window counts.
+4. Thresholds come from the task card and were not tuned on this data.
+
+Run: `ml\venv\Scripts\python.exe ml\baseline.py` (add `--all` for train+test).
