@@ -1,7 +1,10 @@
+import { useState } from 'react'
+import CustodyChain from './CustodyChain'
 import EventItem from './EventItem'
 import HolderTag from './HolderTag'
 import LiabilityCard from './LiabilityCard'
 import StatusPill from './StatusPill'
+import TempChart from './TempChart'
 
 function Header({ box, timeline, onBack }) {
   return (
@@ -24,6 +27,8 @@ function Header({ box, timeline, onBack }) {
 }
 
 function Timeline({ events }) {
+  // When the box was opened: older events don't scroll the page
+  const [openedAt] = useState(() => Date.now())
   const sorted = [...events].sort((a, b) => a.seq - b.seq)
   return (
     <section className="flex flex-col gap-3">
@@ -35,7 +40,11 @@ function Timeline({ events }) {
       ) : (
         <ol className="flex flex-col gap-2">
           {sorted.map((event) => (
-            <EventItem key={`${event.seq}-${event.time}`} event={event} />
+            <EventItem
+              key={`${event.seq}-${event.time}`}
+              event={event}
+              scrollOnArrival={event.arrivedAt > openedAt}
+            />
           ))}
         </ol>
       )}
@@ -48,7 +57,9 @@ function BoxDetail({ box, timeline, onBack }) {
     <div className="flex flex-col gap-5">
       <Header box={box} timeline={timeline} onBack={onBack} />
       <LiabilityCard liable={timeline.liable} events={timeline.events} />
+      <CustodyChain events={timeline.events} />
       <Timeline events={timeline.events} />
+      <TempChart events={timeline.events} />
     </div>
   )
 }

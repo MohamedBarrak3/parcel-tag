@@ -26,15 +26,16 @@ function Readings({ event }) {
 }
 
 // One row of the timeline
-function EventItem({ event }) {
+function EventItem({ event, scrollOnArrival }) {
   const ref = useRef(null)
   const fresh = isNew(event)
   const level = event.expected ? 'info' : event.severity
 
-  // A new event scrolls into view (the newest is at the bottom)
+  // An event that arrives while the box is open scrolls into view
+  // (the newest is at the bottom)
   useEffect(() => {
-    if (fresh) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }, [fresh])
+    if (scrollOnArrival) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [scrollOnArrival])
 
   return (
     <li

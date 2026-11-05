@@ -21,6 +21,8 @@ function HolderTag({ holder, className = 'text-xl' }) {
       <span className={`inline-flex items-center gap-2 rounded-md border-2 border-dashed border-slate-400 bg-slate-100 px-2 py-0.5 font-semibold text-slate-600 ${className}`}>
         {holder && <RoleIcon role={null} className="h-5 w-5" />}
         {holderName(holder)}
+        {/* the UID tells two unknown badges apart */}
+        {holder && <span className="font-mono text-[0.75em] font-normal">{holder.badge_id}</span>}
       </span>
     )
   }
