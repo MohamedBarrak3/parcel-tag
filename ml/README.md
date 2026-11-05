@@ -2,6 +2,7 @@
 
 - Tool: Edge Impulse. Impulse: time series, 2000 ms window, 500 ms increase, 100 Hz, Spectral Analysis + Classification (neural network, 30 training cycles, learning rate 0.0005, auto-weight classes).
 - Data: 107 training samples and 31 test samples (78/22 split). Training data per class: carried ≈240 s, drop ≈115 s, impact ≈145 s, upside_down ≈40 s.
+  Samples per class (train / test): carried 12 / 3, drop 38 / 9, impact 48 / 17, upside_down 9 / 2 (total 107 / 31).
 - Test set: Edge Impulse's 78/22 split of our collection; a separate session will be recorded as a held-out test set.
 - Test results, quantized int8 model (the one deployed): overall accuracy 78.61%, ROC AUC 0.96, weighted F1 0.82. Per class: carried 93.7% (F1 0.97), drop 66.7% (F1 0.55), impact 51.0% (F1 0.61), upside_down 83.3% (F1 0.77).
 - Main confusion: drop vs impact (22% of drops predicted as impact, 39% of impacts as drop). Possible fix: merge them into one "mishandling" class, since the firmware gets drop height from free fall anyway.
