@@ -1,21 +1,12 @@
-import { useEffect, useState } from 'react'
-import { getBoxes } from '../api'
-
 const STATUS_COLORS = {
   ok: 'bg-green-500',
   warning: 'bg-amber-500',
   severe: 'bg-red-500',
 }
 
-function BoxList({ onSelect }) {
-  const [boxes, setBoxes] = useState([])
-
-  useEffect(() => {
-    getBoxes().then(setBoxes)
-  }, [])
-
+function BoxList({ boxes, onSelect }) {
   return (
-    <div className="grid grid-cols-1 gap-8 p-10 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
       {boxes.map((box) => (
         <button
           key={box.box_id}

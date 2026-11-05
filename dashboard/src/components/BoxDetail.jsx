@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-import { getTimeline } from '../api'
 import EventItem from './EventItem'
 import LiabilityCard from './LiabilityCard'
 
@@ -9,15 +7,9 @@ const STATUS_COLORS = {
   severe: 'bg-red-500',
 }
 
-function BoxDetail({ boxId, onBack }) {
-  const [timeline, setTimeline] = useState(null)
-
-  useEffect(() => {
-    getTimeline(boxId).then(setTimeline)
-  }, [boxId])
-
+function BoxDetail({ timeline, onBack }) {
   return (
-    <div className="p-10">
+    <div>
       <button
         type="button"
         onClick={onBack}
