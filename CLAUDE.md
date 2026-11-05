@@ -62,6 +62,6 @@ Agreed with Mohamed: current_holder is an object {badge_id, name, role} or null;
 - A window is 2 s at 100 Hz: 200 samples of 6 values (ax, ay, az, gx, gy, gz).
 - Training is done in Edge Impulse, which also computes the features on the tag, so there is no separate features file.
 - The Edge Impulse project has the labels carried, impact and upside_down, and is exported as an Arduino library for the ESP-32 devkitv1.
-- A drop is detected in the firmware by the free-fall rule, not by the model: |a| < 0.5 g for at least 15 samples at 100 Hz, then a spike. The free-fall time t also gives height_m = ½gt². When a drop is detected, the model's impact for that window is ignored.
+- A drop is detected in the firmware by the free-fall rule, not by the model: |a| < 0.5 g for at least 15 samples at 100 Hz, followed by a spike |a| > 30 m/s² (about 3 g); a free fall without that spike is not a drop. The free-fall time t also gives height_m = ½gt². When a drop is detected, the model's impact for that window is ignored.
 - Event types in the Tag event contract are unchanged (drop is still an event type).
 - Sarah's firmware streams the IMU over USB serial, one line per sample as ax,ay,az,gx,gy,gz at 100 Hz, so the Edge Impulse data forwarder can collect labeled data.
