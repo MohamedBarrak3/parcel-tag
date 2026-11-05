@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+/* New event: slides in and keeps a blue outline for 3 s */
+@keyframes slide-in-highlight {
+  0% { opacity: 0; transform: translateY(-16px); box-shadow: 0 0 0 6px #0ea5e9; }
+  12% { opacity: 1; transform: none; }
+  80% { box-shadow: 0 0 0 6px #0ea5e9; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Box card with a new event: blue outline for 3 s */
+@keyframes highlight {
+  0%, 80% { box-shadow: 0 0 0 6px #0ea5e9; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.event-new { animation: slide-in-highlight 3s ease-out; }
+.card-new { animation: highlight 3s ease-out; }
