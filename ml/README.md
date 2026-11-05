@@ -6,10 +6,10 @@
 - Test set: Edge Impulse's 78/22 split of our collection; a separate session will be recorded as a held-out test set.
 - Test results, quantized int8 model (the one deployed): overall accuracy 78.61%, ROC AUC 0.96, weighted F1 0.82. Per class: carried 93.7% (F1 0.97), drop 66.7% (F1 0.55), impact 51.0% (F1 0.61), upside_down 83.3% (F1 0.77).
 - Main confusion: drop vs impact (22% of drops predicted as impact, 39% of impacts as drop). Possible fix: merge them into one "mishandling" class, since the firmware gets drop height from free fall anyway.
-- Edge Impulse estimate on ESP32 240 MHz (int8, EON): latency 87 ms (86 ms spectral features + 1 ms classifier), RAM 5.6 KB, classifier flash 15.9 KB (no estimate given for the spectral features). Real inference time on the tag to be measured by Sarah.
+- Edge Impulse estimate on ESP32 240 MHz (int8, EON): latency 87 ms (86 ms spectral features + 1 ms classifier), RAM 5.6 KB total including the spectral features step (from the Deployment page table), classifier flash 15.9 KB (no estimate given for the spectral features). Real inference time on the tag to be measured by Sarah.
 - float32 gives the same accuracy (78.61%) but 89 ms and 17.7 KB classifier flash, so int8 was chosen.
 - Figures: docs/confusion_matrix_test.png and docs/accuracy_per_class.png
-- Deployment: Arduino library, quantized int8, EON Compiler, zip in ml/.
+- Deployment: Arduino library, quantized int8, EON Compiler. The v1 zip was replaced by the v2 zip (ml/ei-parcel-tag-arduino-1.0.4-impulse-#1.zip); the v1 model is still saved in Edge Impulse as version "v1 4 classes int8".
 
 ## Baseline vs model
 
@@ -55,6 +55,6 @@ Run: `ml\venv\Scripts\python.exe ml\baseline.py` (add `--all` for train+test).
 - Rule on the test set with N = 15 (`ml/baseline.py --min-freefall 15`): 95.5% overall; carried 100%, drop 88.9%, impact 88.2%, upside_down 100%.
 - 3-class model, int8 test results: overall accuracy 91.04%; carried 91.9%, impact 89.7%, upside_down 91.7%; F1 0.95 / 0.95 / 0.71 (upside_down has only 2 test samples). Impact improved from 51.0% (v1) to 89.7%.
 - Validation accuracy during training was 96.7% (carried 94.2%, impact 100%, upside_down 100%), but the test numbers are the ones we report.
-- On-device (Edge Impulse, ESP32 240 MHz, int8, EON): classifier 1 ms, 1.4 KB peak RAM, 15.8 KB flash; the spectral features step adds about 86 ms.
-- float32 gives 93.03% test accuracy vs 91.04% for int8; int8 was kept because it uses less flash (15.8 KB vs 17.7 KB) and the classifier runs faster (1 ms vs 3 ms), with the same 5.6 KB RAM.
+- On-device (Edge Impulse, ESP32 240 MHz, int8, EON): classifier 1 ms, 1.4 KB peak RAM for the classifier alone (5.6 KB total including the spectral features step, from the Deployment page table), 15.8 KB flash; the spectral features step adds about 86 ms.
+- float32 gives 93.03% test accuracy vs 91.04% for int8; int8 was kept because it uses less flash (15.8 KB vs 17.7 KB) and the classifier runs faster (1 ms vs 3 ms), with the same 5.6 KB total RAM (including the spectral features step).
 - Figures: docs/confusion_matrix_v2.png, docs/accuracy_v2.png. Edge Impulse version: "v2 hybrid 3 classes int8".
