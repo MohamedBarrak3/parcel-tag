@@ -22,7 +22,9 @@ const SEVERITY_DOT = {
 function EventItem({ event }) {
   const holderText = !event.holder
     ? 'Unassigned'
-    : `${event.holder.name || 'Unknown badge'} (${event.holder.role})`
+    : event.holder.name
+      ? `${event.holder.name}${event.holder.role ? ` (${event.holder.role})` : ''}`
+      : 'Unknown badge'
 
   const isTempBreach = event.type === 'temp_breach'
 

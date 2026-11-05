@@ -6,9 +6,9 @@ function LiabilityCard({ liable }) {
         <p className="text-xl text-gray-600">No liable party</p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {liable.map((entry) => (
-            <li key={`${entry.badge_id}-${entry.reason}`} className="text-xl text-gray-800">
-              <span className="font-semibold">{entry.name}</span> — {entry.reason}
+          {liable.map((entry, i) => (
+            <li key={`${entry.badge_id}-${entry.reason}-${i}`} className="text-xl text-gray-800">
+              <span className="font-semibold">{entry.name || 'Unknown badge'}</span> — {entry.reason}
             </li>
           ))}
         </ul>

@@ -28,12 +28,16 @@ function BoxList({ onSelect }) {
             <span className="text-4xl font-bold text-gray-900">{box.box_id}</span>
           </div>
           <div className="text-2xl text-gray-700">
-            {box.current_holder
-              ? `${box.current_holder.name} (${box.current_holder.role})`
-              : 'Unassigned'}
+            {!box.current_holder
+              ? 'Unassigned'
+              : box.current_holder.name
+                ? `${box.current_holder.name}${box.current_holder.role ? ` (${box.current_holder.role})` : ''}`
+                : 'Unknown badge'}
           </div>
           <div className="text-xl text-gray-500">
-            {new Date(box.last_event_time).toLocaleString()}
+            {box.last_event_time
+              ? new Date(box.last_event_time).toLocaleString()
+              : 'No events yet'}
           </div>
         </button>
       ))}

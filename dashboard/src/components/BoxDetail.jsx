@@ -39,13 +39,17 @@ function BoxDetail({ boxId, onBack }) {
             <LiabilityCard liable={timeline.liable} />
           </div>
 
-          <div className="flex flex-col gap-4">
-            {[...timeline.events]
-              .sort((a, b) => a.seq - b.seq)
-              .map((event) => (
-                <EventItem key={event.seq} event={event} />
-              ))}
-          </div>
+          {timeline.events.length === 0 ? (
+            <p className="text-2xl text-gray-500">No events yet</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {[...timeline.events]
+                .sort((a, b) => a.seq - b.seq)
+                .map((event) => (
+                  <EventItem key={event.seq} event={event} />
+                ))}
+            </div>
+          )}
         </>
       )}
     </div>

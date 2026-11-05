@@ -10,7 +10,9 @@ export async function getBoxes() {
 }
 
 export async function getTimeline(boxId) {
-  if (!API_URL) return mockTimeline
+  if (!API_URL) {
+    return mockTimeline[boxId] ?? { box_id: boxId, status: 'ok', liable: [], events: [] }
+  }
   const res = await fetch(`${API_URL}/api/boxes/${boxId}/timeline`)
   return res.json()
 }
