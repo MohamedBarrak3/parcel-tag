@@ -1,68 +1,69 @@
+import { useEffect, useRef } from 'react'
+import { clockTime, eventLabel, SAFE_TEMP_MAX_C, SAFE_TEMP_MIN_C } from '../format'
+import { isNew } from '../newEvents'
+import { LEVELS } from '../theme'
 import HolderTag from './HolderTag'
+import { EventIcon, LevelIcon } from './Icons'
+import StatusPill from './StatusPill'
 
-const TYPE_LABELS = {
-  tap: 'Badge tap',
-  drop: 'Drop',
-  impact: 'Impact',
-  upside_down: 'Upside down',
-  tamper: 'Lid opened',
-  temp_breach: 'Temperature alert',
+const ROW_STYLES = {
+  severe: 'border-red-700 bg-red-50',
+  warning: 'border-amber-500 bg-amber-50',
+  info: 'border-slate-300 bg-white',
 }
 
-const SEVERITY_STYLES = {
-  info: 'border-gray-300 bg-gray-50',
-  warning: 'border-amber-400 bg-amber-50',
-  severe: 'border-red-400 bg-red-50',
+function Readings({ event }) {
+  const outOfRange =
+    event.temp_c != null && (event.temp_c > SAFE_TEMP_MAX_C || event.temp_c < SAFE_TEMP_MIN_C)
+  return (
+    <span className="text-lg text-slate-600">
+      {event.temp_c != null && (
+        <span className={outOfRange ? 'font-bold text-red-700' : ''}>{event.temp_c} °C</span>
+      )}
+      {event.hum_pct != null && <span> · {event.hum_pct} % hum.</span>}
+    </span>
+  )
 }
 
-const SEVERITY_DOT = {
-  info: 'bg-gray-400',
-  warning: 'bg-amber-500',
-  severe: 'bg-red-500',
-}
-
+// One row of the timeline
 function EventItem({ event }) {
-  const isTempBreach = event.type === 'temp_breach'
+  const ref = useRef(null)
+  const fresh = isNew(event)
+  const level = event.expected ? 'info' : event.severity
+
+  // A new event scrolls into view (the newest is at the bottom)
+  useEffect(() => {
+    if (fresh) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [fresh])
 
   return (
-    <div
-      className={`flex flex-col gap-3 rounded-2xl border-2 p-6 ${SEVERITY_STYLES[event.severity]} ${
-        isTempBreach ? 'ring-4 ring-red-600' : ''
-      }`}
+    <li
+      ref={ref}
+      className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-2 border-l-8 px-4 py-2 ${ROW_STYLES[level]} ${
+        event.expected ? 'opacity-75' : ''
+      } ${fresh ? 'event-new' : ''}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className={`h-4 w-4 rounded-full ${SEVERITY_DOT[event.severity]}`} />
-          <span className="text-2xl font-bold text-gray-900">
-            {TYPE_LABELS[event.type]}
-          </span>
-          {isTempBreach && (
-            <span className="rounded-full bg-red-600 px-3 py-1 text-base font-bold text-white">
-              ALERT
-            </span>
-          )}
-          {event.expected && (
-            <span className="rounded-full bg-gray-200 px-3 py-1 text-base font-semibold text-gray-700">
-              expected
-            </span>
-          )}
-        </div>
-        <span className="text-lg text-gray-500">
-          {new Date(event.time).toLocaleString()}
-        </span>
-      </div>
-
-      <HolderTag holder={event.holder} />
-
-      <div className="flex gap-6 text-lg text-gray-600">
-        {event.temp_c != null && event.hum_pct != null && (
-          <span className={isTempBreach ? 'font-bold text-red-600' : ''}>
-            {event.temp_c} °C · {event.hum_pct} %
-          </span>
+      <span className="w-24 text-lg tabular-nums text-slate-600">{clockTime(event.time)}</span>
+      <span className={`rounded-full p-1.5 ${event.expected ? 'bg-slate-200 text-slate-700' : LEVELS[level].solid}`}>
+        <EventIcon type={event.type} className="h-6 w-6" />
+      </span>
+      <span className="text-2xl font-bold">{eventLabel(event)}</span>
+      {event.type !== 'tap' && <HolderTag holder={event.holder} className="text-lg" />}
+      <span className="ml-auto flex items-center gap-3">
+        <Readings event={event} />
+        {fresh && (
+          <span className="rounded-full bg-sky-600 px-2 py-0.5 text-base font-bold text-white">NEW</span>
         )}
-        {event.height_m != null && <span>≈{event.height_m} m</span>}
-      </div>
-    </div>
+        {event.expected ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-slate-400 px-3 py-0.5 text-lg font-bold uppercase text-slate-700">
+            <LevelIcon level="ok" className="h-5 w-5" />
+            Expected
+          </span>
+        ) : (
+          <StatusPill level={event.severity} />
+        )}
+      </span>
+    </li>
   )
 }
 
