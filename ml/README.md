@@ -56,5 +56,5 @@ Run: `ml\venv\Scripts\python.exe ml\baseline.py` (add `--all` for train+test).
 - 3-class model, int8 test results: overall accuracy 91.04%; carried 91.9%, impact 89.7%, upside_down 91.7%; F1 0.95 / 0.95 / 0.71 (upside_down has only 2 test samples). Impact improved from 51.0% (v1) to 89.7%.
 - Validation accuracy during training was 96.7% (carried 94.2%, impact 100%, upside_down 100%), but the test numbers are the ones we report.
 - On-device (Edge Impulse, ESP32 240 MHz, int8, EON): classifier 1 ms, 1.4 KB peak RAM, 15.8 KB flash; the spectral features step adds about 86 ms.
+- float32 gives 93.03% test accuracy vs 91.04% for int8; int8 was kept because it uses less flash (15.8 KB vs 17.7 KB) and the classifier runs faster (1 ms vs 3 ms), with the same 5.6 KB RAM.
 - Figures: docs/confusion_matrix_v2.png, docs/accuracy_v2.png. Edge Impulse version: "v2 hybrid 3 classes int8".
-- v2 Arduino library not exported yet (the zip in ml/ is still v1).
