@@ -7,6 +7,7 @@ Usage:
     python ml/baseline.py                 # test samples only, export in ml/ei_export
     python ml/baseline.py path/to/export  # another export folder
     python ml/baseline.py --all           # also report on train+test
+    python ml/baseline.py --min-freefall 20   # free fall must last 20 samples (200 ms)
 """
 
 import argparse
@@ -22,7 +23,7 @@ STEP = 50  # 0.5 s
 G = 9.81
 
 FREE_FALL = 4.9  # |a| below this is free fall (m/s²)
-FREE_FALL_MIN_SAMPLES = 8
+FREE_FALL_MIN_SAMPLES = 8  # default, see --min-freefall
 SPIKE = 30.0  # |a| above this is a hit (m/s²)
 UPSIDE_DOWN_AZ = -7.0  # mean az below this is upside down (m/s²)
 
@@ -58,17 +59,17 @@ def windows(values):
         yield values[start:start + WINDOW]
 
 
-def classify(window):
+def classify(window, min_freefall=FREE_FALL_MIN_SAMPLES):
     acc = window[:, :3]
     mag = np.linalg.norm(acc, axis=1)
     spikes = np.flatnonzero(mag > SPIKE)
 
     if spikes.size:
-        # end index of the first run of >= 8 consecutive free-fall samples
+        # end index of the first run of >= min_freefall consecutive free-fall samples
         run = 0
         for i, low in enumerate(mag < FREE_FALL):
             run = run + 1 if low else 0
-            if run >= FREE_FALL_MIN_SAMPLES:
+            if run >= min_freefall:
                 if (spikes > i).any():
                     return "drop"
                 break
@@ -79,11 +80,11 @@ def classify(window):
     return "carried"
 
 
-def evaluate(samples, scale, title):
+def evaluate(samples, scale, title, min_freefall=FREE_FALL_MIN_SAMPLES):
     confusion = np.zeros((len(LABELS), len(LABELS)), dtype=int)
     for label, values in samples:
         for window in windows(values * np.array([scale] * 3 + [1] * 3)):
-            confusion[LABELS.index(label), LABELS.index(classify(window))] += 1
+            confusion[LABELS.index(label), LABELS.index(classify(window, min_freefall))] += 1
 
     totals = confusion.sum(axis=1)
     width = max(len(l) for l in LABELS) + 2
@@ -107,15 +108,18 @@ def main():
     parser.add_argument("folder", nargs="?", default=Path(__file__).parent / "ei_export", type=Path,
                         help="unzipped Edge Impulse export (default: ml/ei_export)")
     parser.add_argument("--all", action="store_true", help="also report on train+test")
+    parser.add_argument("--min-freefall", type=int, default=FREE_FALL_MIN_SAMPLES, metavar="N",
+                        help=f"consecutive free-fall samples needed for a drop (default: {FREE_FALL_MIN_SAMPLES})")
     args = parser.parse_args()
 
     test = load_samples(args.folder, {"testing"})
     scale, unit = detect_scale(test)
     print(f"Unit detected: {unit}")
-    evaluate(test, scale, "Test set")
+    print(f"Free fall: at least {args.min_freefall} samples ({args.min_freefall * 10} ms) below {FREE_FALL} m/s2")
+    evaluate(test, scale, "Test set", args.min_freefall)
 
     if args.all:
-        evaluate(load_samples(args.folder, {"training", "testing"}), scale, "Train + test")
+        evaluate(load_samples(args.folder, {"training", "testing"}), scale, "Train + test", args.min_freefall)
 
 
 if __name__ == "__main__":
