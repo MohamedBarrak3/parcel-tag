@@ -7,10 +7,16 @@ const TYPE_LABELS = {
   temp_breach: 'Temperature alert',
 }
 
-const SEVERITY_STYLES = {
-  info: 'border-gray-300 bg-gray-50',
-  warning: 'border-amber-400 bg-amber-50',
-  severe: 'border-red-400 bg-red-50',
+const SEVERITY_BORDER = {
+  info: 'border-gray-300',
+  warning: 'border-amber-400',
+  severe: 'border-red-400',
+}
+
+const SEVERITY_BG = {
+  info: 'bg-gray-50',
+  warning: 'bg-amber-50',
+  severe: 'bg-red-50',
 }
 
 const SEVERITY_DOT = {
@@ -19,7 +25,7 @@ const SEVERITY_DOT = {
   severe: 'bg-red-500',
 }
 
-function EventItem({ event }) {
+function EventItem({ event, isNew }) {
   const holderText = !event.holder
     ? 'Unassigned'
     : event.holder.name
@@ -30,7 +36,9 @@ function EventItem({ event }) {
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-2xl border-2 p-6 ${SEVERITY_STYLES[event.severity]} ${
+      className={`flex flex-col gap-3 rounded-2xl border-2 p-6 transition-colors duration-700 ${
+        SEVERITY_BORDER[event.severity]
+      } ${isNew ? 'bg-yellow-200' : SEVERITY_BG[event.severity]} ${
         isTempBreach ? 'ring-4 ring-red-600' : ''
       }`}
     >
