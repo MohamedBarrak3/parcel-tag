@@ -28,4 +28,9 @@ Rule-based baseline (`ml/baseline.py`) on the same 31 test samples, cut into 2 s
 3. Not a strictly equal comparison: window cutting differs, Edge Impulse counts "uncertain" as wrong, and carried dominates the window counts.
 4. Thresholds come from the task card and were not tuned on this data.
 
+Setup (once, from the repo root):
+1. Create the venv: `python -m venv ml\venv`
+2. Install numpy: `ml\venv\Scripts\python.exe -m pip install numpy`
+3. Export the data from Edge Impulse (Data acquisition → Export data) and unzip it into `ml\ei_export\` (git-ignored), keeping `info.labels`.
+
 Run: `ml\venv\Scripts\python.exe ml\baseline.py` (add `--all` for train+test).
