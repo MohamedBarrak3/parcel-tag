@@ -1,7 +1,7 @@
 # Parcel Custody Tag — project rules for Claude
 
 This is a student project: a smart parcel custody tag.
-An ESP-32 devkitv1 tag inside a parcel detects handling events (drop, impact, upside-down, lid opened = tamper, temperature out of range = temp_breach) using an IMU, a hall sensor, a DHT11 temperature and humidity sensor and an ML model. An RFID reader mounted on the tag logs badge taps: a tap means that person now holds the box. The tag uploads its event log over Wi-Fi to a FastAPI backend using HTTP POST. The backend converts times, assigns each event to the badge holder at that moment, and a React dashboard shows each box's custody timeline and who is liable.
+An ESP-32 devkitv1 tag inside a parcel detects handling events (drop, impact, upside-down, lid opened = tamper, temperature out of range = temp_breach) using an IMU, a light sensor, a DHT11 temperature and humidity sensor and an ML model. An RFID reader mounted on the tag logs badge taps: a tap means that person now holds the box. The tag uploads its event log over Wi-Fi to a FastAPI backend using HTTP POST. The backend converts times, assigns each event to the badge holder at that moment, and a React dashboard shows each box's custody timeline and who is liable.
 
 ## Team and folders
 - backend/ — Mohamed (FastAPI, custody logic, simulator)
