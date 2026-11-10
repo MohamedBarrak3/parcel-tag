@@ -1,5 +1,40 @@
 # ML model (Edge Impulse)
 
+## v3 – 4 classes with still
+
+- Labels: carried, impact, still, upside_down. Drop is still detected in the firmware by the free-fall rule (N = 15, unchanged); `still` produces no event, like carried.
+- Data: Sarah's rebuilt dataset, 220 samples, train/test split set by Sarah. Samples per class (train / test): carried 30 / 7, impact 109 / 34, still 17 / 3, upside_down 15 / 5.
+- Impulse: same as v2 (2000 ms window, 500 ms increase, 100 Hz, 6 axes, Spectral Analysis + neural network, auto-weight classes, no rebalance).
+- Test results, quantized int8 model (the one deployed): overall accuracy 97.49%, ROC AUC 1.00, weighted precision / recall / F1 0.98.
+
+| Class | Accuracy (int8) | F1 |
+|---|---|---|
+| carried | 96.6% | 0.98 |
+| impact | 96.2% | 0.98 |
+| still | 100% | 1.00 |
+| upside_down | 96.7% | 0.95 |
+
+- Flags: no class is below 90%. carried ↔ impact: 0% of carried predicted as impact, 1.0% of impact as carried. carried ↔ upside_down: 2.0% of carried predicted as upside_down, 1.6% of upside_down as carried. The rest goes to uncertain (carried 1.4%, impact 1.9%, upside_down 1.6%) or impact → upside_down (1.0%).
+- The test set is small (still 3, upside_down 5 samples), so the per-class percentages for those classes are not reliable.
+- On-device (Edge Impulse estimate, ESP-EYE ESP32 240 MHz, EON):
+
+| | Spectral features | Classifier | Total |
+|---|---|---|---|
+| int8 latency | 86 ms | 1 ms | 87 ms |
+| int8 RAM | 5.6 KB | 1.4 KB | 5.6 KB |
+| int8 flash | – | 15.9 KB | – |
+| float32 latency | 86 ms | 3 ms | 89 ms |
+| float32 RAM | 5.6 KB | 1.6 KB | 5.6 KB |
+| float32 flash | – | 17.7 KB | – |
+
+- float32 test accuracy is 96.81% vs 97.49% for int8, so int8 was kept (less flash, faster classifier, same total RAM).
+- Latency is the same estimate as v2 (87 ms total), since the spectral features step dominates and is unchanged. The estimate is for 240 MHz, while the tag runs at 160 MHz; the old model measured 51–57 ms on the tag, and the target is about 60 ms or less. The real time must be measured by Sarah.
+- Deployment: Arduino library, quantized int8, EON Compiler: ml/ei-parcel-tag-arduino-1.0.5-impulse-#1.zip (replaces the v2 zip).
+- Figures: docs/confusion_matrix_v3.png, docs/accuracy_v3.png, docs/deployment_v3.png.
+- Old data: ml/ei_export, `ml/baseline.py` and `ml/tune_freefall.py` use the OLD dataset. The new dataset has no drop label, so the free-fall threshold (N = 15) was not re-tuned.
+
+## v1 – 4 classes with drop (history)
+
 - Tool: Edge Impulse. Impulse: time series, 2000 ms window, 500 ms increase, 100 Hz, Spectral Analysis + Classification (neural network, 30 training cycles, learning rate 0.0005, auto-weight classes).
 - Data: 107 training samples and 31 test samples (78/22 split). Training data per class: carried ≈240 s, drop ≈115 s, impact ≈145 s, upside_down ≈40 s.
   Samples per class (train / test): carried 12 / 3, drop 38 / 9, impact 48 / 17, upside_down 9 / 2 (total 107 / 31).
