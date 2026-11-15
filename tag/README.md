@@ -1,13 +1,8 @@
 # Tag firmware (ESP32 DevKit V1)
 
-Each sketch is in its own folder, because the Arduino IDE needs the folder name to match the .ino name.
+`main_tag_v18_profile/main_tag_v18_profile.ino` is the firmware: events (tap, drop, impact, upside_down, tamper, temp_breach), flash log, Wi-Fi upload, the OLED screen with knob and push button, and the handling profile (FRAGILE yes/no, TEMP MODE cold / room / medication; an alert stays on the screen with the red LED on until the button is pressed). It runs on the box (tested by Sarah, 15 Nov 2026).
 
-| Sketch | What it is |
-|---|---|
-| `main_tag_v17_screen/` | Stable version: detection, flash log, Wi-Fi upload, plus the OLED screen, knob (page) and push button. Used for the backup video. |
-| `main_tag_v18_profile/` | v17 + the handling profile: FRAGILE yes/no and TEMP MODE (cold / room / medication) pages, and an alert that stays on the screen (red LED on) until the button is pressed. Events and upload format are the same as v17. Status on 15 Nov 2026: the screen and profile logic is tested on a PC and it compiles for both screen chips, but it has not been tried on the box yet. |
-
-Wiring, serial commands and the change history are in the comment at the top of each sketch.
+The sketch is in its own folder because the Arduino IDE needs the folder name to match the .ino name. Wiring, serial commands and the change history are in the comment at the top of the sketch.
 
 ## Before flashing
 
@@ -23,4 +18,4 @@ Wiring, serial commands and the change history are in the comment at the top of 
 
 ## Model library
 
-`ei-parcel-tag-arduino-1.0.6-impulse-1.zip` is the Edge Impulse deployment the tag runs (project `parcel-tag`, ID 1152202, generated 12 Nov 2026). It has the same four labels and layers as the 1.0.5 zip in `ml/` (generated 10 Nov 2026) but different weights, so the 1.0.5 test numbers in `ml/README.md` do not describe it. The sketches only check that the library has four labels, so either zip is accepted at compile time.
+`ei-parcel-tag-arduino-1.0.6-impulse-1.zip` is the Edge Impulse deployment the tag runs (project `parcel-tag`, ID 1152202, generated 12 Nov 2026). It has the same four labels and layers as the 1.0.5 zip in `ml/` (generated 10 Nov 2026) but different weights, so the 1.0.5 test numbers in `ml/README.md` do not describe it. The sketch only checks that the library has four labels, so either zip is accepted at compile time.
