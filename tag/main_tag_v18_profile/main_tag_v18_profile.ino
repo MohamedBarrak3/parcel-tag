@@ -112,7 +112,7 @@
 const char* BOX_ID = "B001";
 const char* WIFI_SSID = "YOUR_WIFI_NAME";
 const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
-const char* SERVER_IP = "10.14.41.168";   // the laptop that runs the backend
+const char* SERVER_IP = "your laptop ip here";   // the laptop that runs the backend
 const int   SERVER_PORT = 8000;
 const int   MAX_BATCH = 20;               // events per upload
 const bool LID_SENSOR_ENABLED = true;    // LDR light sensor module, AO on GPIO 32, inside the dark box
