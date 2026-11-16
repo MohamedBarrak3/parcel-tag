@@ -1,80 +1,50 @@
-const TYPE_LABELS = {
-  tap: 'Badge tap',
-  drop: 'Drop',
-  impact: 'Impact',
-  upside_down: 'Upside down',
-  tamper: 'Lid opened',
-  temp_breach: 'Temperature alert',
-}
-
-const SEVERITY_BORDER = {
-  info: 'border-gray-300',
-  warning: 'border-amber-400',
-  severe: 'border-red-400',
-}
-
-const SEVERITY_BG = {
-  info: 'bg-gray-50',
-  warning: 'bg-amber-50',
-  severe: 'bg-red-50',
-}
-
-const SEVERITY_DOT = {
-  info: 'bg-gray-400',
-  warning: 'bg-amber-500',
-  severe: 'bg-red-500',
-}
+import { EVENT_ICON, SEVERITY, ago, clock, eventTitle, personName, roleText } from '../labels'
 
 function EventItem({ event, isNew }) {
-  const holderText = !event.holder
-    ? 'Unassigned'
-    : event.holder.name
-      ? `${event.holder.name}${event.holder.role ? ` (${event.holder.role})` : ''}`
-      : 'Unknown badge'
-
-  const isTempBreach = event.type === 'temp_breach'
+  const sev = event.expected ? SEVERITY.info : (SEVERITY[event.severity] ?? SEVERITY.info)
+  const role = roleText(event.holder)
 
   return (
-    <div
-      className={`flex flex-col gap-3 rounded-2xl border-2 p-6 transition-colors duration-700 ${
-        SEVERITY_BORDER[event.severity]
-      } ${isNew ? 'bg-yellow-200' : SEVERITY_BG[event.severity]} ${
-        isTempBreach ? 'ring-4 ring-red-600' : ''
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className={`h-4 w-4 rounded-full ${SEVERITY_DOT[event.severity]}`} />
-          <span className="text-2xl font-bold text-gray-900">
-            {TYPE_LABELS[event.type]}
+    <li className="relative pl-12">
+      <span className="absolute left-0 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg shadow ring-1 ring-slate-200">
+        {EVENT_ICON[event.type] ?? '•'}
+      </span>
+      <div
+        className={`rounded-xl border p-4 transition-colors duration-700 ${
+          isNew ? 'border-yellow-300 bg-yellow-100' : sev.card
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-slate-900">{eventTitle(event)}</span>
+            {event.type !== 'tap' && (
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${sev.pill}`}>
+                {event.expected ? 'Expected' : sev.word}
+              </span>
+            )}
+            {isNew && <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-bold text-yellow-900">NEW</span>}
+          </div>
+          <span className="text-sm text-slate-500" title={new Date(event.time).toLocaleString()}>
+            {clock(event.time)} · {ago(event.time)}
           </span>
-          {isTempBreach && (
-            <span className="rounded-full bg-red-600 px-3 py-1 text-base font-bold text-white">
-              ALERT
+        </div>
+
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+          {event.type !== 'tap' && (
+            <span>
+              Held by <span className="font-medium text-slate-800">{event.holder ? personName(event.holder) : 'nobody yet'}</span>
+              {role && ` (${role})`}
             </span>
           )}
-          {event.expected && (
-            <span className="rounded-full bg-gray-200 px-3 py-1 text-base font-semibold text-gray-700">
-              expected
+          {event.type === 'tap' && role && <span>Role: {role}</span>}
+          {event.temp_c != null && (
+            <span className={event.type === 'temp_breach' ? 'font-semibold text-red-600' : ''}>
+              {event.temp_c} °C{event.hum_pct != null && ` · ${event.hum_pct} % humidity`}
             </span>
           )}
         </div>
-        <span className="text-lg text-gray-500">
-          {new Date(event.time).toLocaleString()}
-        </span>
       </div>
-
-      <div className="text-xl text-gray-800">{holderText}</div>
-
-      <div className="flex gap-6 text-lg text-gray-600">
-        {event.temp_c != null && event.hum_pct != null && (
-          <span className={isTempBreach ? 'font-bold text-red-600' : ''}>
-            {event.temp_c} °C · {event.hum_pct} %
-          </span>
-        )}
-        {event.height_m != null && <span>≈{event.height_m} m</span>}
-      </div>
-    </div>
+    </li>
   )
 }
 
