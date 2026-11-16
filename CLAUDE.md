@@ -32,6 +32,7 @@ An ESP-32 devkitv1 tag inside a parcel detects handling events (drop, impact, up
 POST /api/upload
 {"box_id": "B001", "uploaded_at_uptime_ms": 130000, "events": [ {"seq": 41, "...": "..."}, {"seq": 42, "...": "..."} ]}
 Response 200: {"ack_seq": 42}
+Optional "profile" in the upload body: {"fragile": true, "temp_mode": "room", "temp_min_c": 5.0, "temp_max_c": 30.0}. temp_mode is cold, room or medication; temp_min_c and temp_max_c are the tag's temp_breach limits for that mode. The tag sends it with every upload, and on its own (with "events": []) after a restart or when the profile changes. The backend keeps the latest one per box. It is display only: severity rules are unchanged.
 The tag deletes events up to ack_seq only after this response. Uploading the same events twice changes nothing (unique on box_id + seq).
 
 ### Time conversion (done by the backend)
@@ -48,8 +49,8 @@ event_time = server_receive_time − (uploaded_at_uptime_ms − event.uptime_ms)
 ### REST API (dashboard reads)
 | Endpoint | Returns |
 |---|---|
-| GET /api/boxes | list of {box_id, status, last_event_time, current_holder}; status is ok, warning or severe |
-| GET /api/boxes/{box_id}/timeline | {box_id, status, liable: [{badge_id, name, reason}], events: [{seq, time, type, severity, height_m, temp_c, hum_pct, holder: {badge_id, name, role}, expected}]}; time is ISO 8601 |
+| GET /api/boxes | list of {box_id, status, last_event_time, current_holder, profile}; status is ok, warning or severe; profile is the object above or null |
+| GET /api/boxes/{box_id}/timeline | {box_id, status, profile, liable: [{badge_id, name, reason}], events: [{seq, time, type, severity, height_m, temp_c, hum_pct, holder: {badge_id, name, role}, expected}]}; time is ISO 8601 |
 | GET /api/handlers | list of {badge_id, name, role}; role is warehouse, driver or client |
 | POST /api/handlers | body {badge_id, name, role}; registers a badge |
 | POST /api/reset | demo only: deletes all events so the demo can restart |

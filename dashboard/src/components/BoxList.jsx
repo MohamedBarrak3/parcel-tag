@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getBoxes } from '../api'
 import BackendBanner from './BackendBanner'
+import ProfileBadge from './ProfileBadge'
 
 const POLL_MS = 2000
 
@@ -62,6 +63,7 @@ function BoxList({ onSelect }) {
                     ? `${box.current_holder.name}${box.current_holder.role ? ` (${box.current_holder.role})` : ''}`
                     : 'Unknown badge'}
               </div>
+              <ProfileBadge profile={box.profile} />
               <div className="text-xl text-gray-500">
                 {box.last_event_time
                   ? new Date(box.last_event_time).toLocaleString()

@@ -3,6 +3,7 @@ import { getTimeline } from '../api'
 import BackendBanner from './BackendBanner'
 import EventItem from './EventItem'
 import LiabilityCard from './LiabilityCard'
+import ProfileBadge from './ProfileBadge'
 
 const POLL_MS = 2000
 const HIGHLIGHT_MS = 3000
@@ -83,6 +84,10 @@ function BoxDetail({ boxId, onBack }) {
           <div className="mb-8 flex items-center gap-4">
             <span className={`h-6 w-6 rounded-full ${STATUS_COLORS[timeline.status]}`} />
             <h1 className="text-4xl font-bold text-gray-900">{timeline.box_id}</h1>
+          </div>
+
+          <div className="mb-8">
+            <ProfileBadge profile={timeline.profile} />
           </div>
 
           <div className="mb-8">

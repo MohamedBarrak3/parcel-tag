@@ -1,3 +1,7 @@
+// Main tag firmware v0.19 = v0.18 + the handling profile is sent to the backend, so the dashboard shows it.
+//   Every upload now carries "profile": {"fragile": true, "temp_mode": "room", "temp_min_c": 5, "temp_max_c": 30} (the alert limits of the mode).
+//   When the profile changes (button or k / t) or after a restart, the tag uploads it at once, even with no new event (then "events" is empty).
+//   Events, seq/ack and the detection rules are unchanged.
 // Main tag firmware v0.18 = v0.17 + the HANDLING PROFILE ("modes"), chosen on the box with the knob + button and saved in flash (survives a reboot).
 //   Events, the upload format, the model and the detection rules are unchanged: the profile only decides what counts as an ALERT on the box and which temperature limits apply.
 //   - FRAGILE page: button = YES / NO.  YES: every drop and every impact is an alert.  NO: only a drop of DROP_ALERT_M (0.30 m) or more is an alert, an impact is not.
@@ -289,6 +293,7 @@ const char* volatile uiBootMsg = "starting";   // shown on the screen until setu
 volatile bool tagReady = false;
 volatile uint8_t uiPage = 0;             // page on the screen (0-7)
 volatile bool profFragile = PROFILE_FRAGILE_DEFAULT;   // handling profile, saved in flash: fragile box yes / no
+volatile bool profileDirty = true;       // the backend has not got the current profile yet (true after a restart)
 volatile uint8_t profTemp = PROFILE_TEMP_DEFAULT;      // handling profile, saved in flash: index in TEMP_MODES
 volatile bool alertLatched = false;      // a violation of the profile: on the screen (and the red LED) until the button is pressed
 char alertWhy[12] = "";                  // its reason, at most 10 characters: "DROP 0.42m", "IMPACT", "TEMP 11 C"
@@ -427,6 +432,7 @@ void stepImpactLimit() {                 // the button on the IMPACT LIMIT page:
 
 void toggleFragile() {                   // the button on the FRAGILE page, or 'k'
   profFragile = !profFragile;
+  profileDirty = true;                   // after the change, so the upload task never sends the old value as the new one
   prefs.putBool("pFrag", profFragile);
   if (profFragile) Serial.println("Profile: fragile box YES (saved): every drop and every impact is an alert.");
   else Serial.printf("Profile: fragile box NO (saved): only a drop of %.2f m or more is an alert, an impact is not.\n", DROP_ALERT_M);
@@ -434,6 +440,7 @@ void toggleFragile() {                   // the button on the FRAGILE page, or '
 
 void nextTempMode() {                    // the button on the TEMP MODE page, or 't'
   profileSetTemp((uint8_t)((profTemp + 1) % TEMP_MODE_COUNT), millis());     // judged again only after a short pause: scrolling through the modes raises nothing
+  profileDirty = true;                    // tell the backend (after the change)
   prefs.putUChar("pTemp", profTemp);
   Serial.printf("Profile: temperature mode %s (saved): alert below %.0f or above %.0f C. The temperature is judged again in %lu s.\n",
                 TEMP_MODES[profTemp].name, tempLimitLow(profTemp), tempLimitHigh(profTemp), (unsigned long)(PROFILE_SETTLE_MS / 1000));
@@ -632,20 +639,29 @@ bool uploadBatch() {
     f.close();
   }
   xSemaphoreGive(fsMutex);
-  if (!count) return true;
+  bool sendingProfile = profileDirty;
+  if (!count && !sendingProfile) return true;
+  profileDirty = false;                              // set again below if this upload fails, or by a change made while it runs
 
+  uint8_t pm = profTemp;
+  String mode = TEMP_MODES[pm].name;
+  mode.toLowerCase();
+  char prof[128];
+  snprintf(prof, sizeof(prof), "{\"fragile\":%s,\"temp_mode\":\"%s\",\"temp_min_c\":%.1f,\"temp_max_c\":%.1f}",
+           profFragile ? "true" : "false", mode.c_str(), tempLimitLow(pm), tempLimitHigh(pm));
   String body = String("{\"box_id\":\"") + BOX_ID + "\",\"uploaded_at_uptime_ms\":" +
-                String((unsigned long)millis()) + ",\"events\":[" + events + "]}";
+                String((unsigned long)millis()) + ",\"profile\":" + prof + ",\"events\":[" + events + "]}";
   String url = String("http://") + SERVER_IP + ":" + SERVER_PORT + "/api/upload";
   HTTPClient http;
   http.setConnectTimeout(3000);
   http.setTimeout(4000);
-  if (!http.begin(url)) { Serial.println("UPLOAD failed: bad URL"); lastUploadOk = 0; lastUploadMs = millis(); return false; }
+  if (!http.begin(url)) { if (sendingProfile) profileDirty = true; Serial.println("UPLOAD failed: bad URL"); lastUploadOk = 0; lastUploadMs = millis(); return false; }
   http.addHeader("Content-Type", "application/json");
   int code = http.POST(body);
   String resp = (code > 0) ? http.getString() : String("");
   http.end();
   if (code != 200) {
+    if (sendingProfile) profileDirty = true;
     Serial.printf("UPLOAD failed: %s (will retry, events stay saved)\n",
                   code > 0 ? (String("server answered ") + code).c_str() : HTTPClient::errorToString(code).c_str());
     lastUploadOk = 0; lastUploadMs = millis();
@@ -653,8 +669,13 @@ bool uploadBatch() {
   }
   int p = resp.indexOf("ack_seq");
   p = (p < 0) ? -1 : resp.indexOf(':', p);
-  if (p < 0) { Serial.println("UPLOAD failed: no ack_seq in the answer"); lastUploadOk = 0; lastUploadMs = millis(); return false; }
+  if (p < 0) { if (sendingProfile) profileDirty = true; Serial.println("UPLOAD failed: no ack_seq in the answer"); lastUploadOk = 0; lastUploadMs = millis(); return false; }
   uint32_t ack = strtoul(resp.c_str() + p + 1, NULL, 10);
+  if (!count) {                                      // a profile-only upload: nothing to acknowledge
+    Serial.printf("UPLOAD ok: profile sent (%s, %s)\n", profFragile ? "fragile" : "not fragile", TEMP_MODES[pm].name);
+    lastUploadOk = 1; lastUploadMs = millis();
+    return true;
+  }
   if (ack > lastSeq) ack = lastSeq;                  // never mark events we did not send as delivered
   if (ack < firstSeq) { Serial.printf("UPLOAD: server acked %lu, below this batch (%lu-%lu), will retry\n",
                                        (unsigned long)ack, (unsigned long)firstSeq, (unsigned long)lastSeq); lastUploadOk = 0; lastUploadMs = millis(); return false; }
@@ -691,7 +712,7 @@ void uploadTask(void*) {
       continue;
     }
     if (!wasUp) { wasUp = true; Serial.printf("Wi-Fi connected, tag IP %s\n", WiFi.localIP().toString().c_str()); nextUpload = 0; }
-    if (millis() >= nextUpload && seq > ackSeq) {
+    if (millis() >= nextUpload && (seq > ackSeq || profileDirty)) {
       if (uploadBatch()) { backoff = 1000; nextUpload = millis() + 300; }
       else { nextUpload = millis() + backoff; backoff = (backoff * 2 > 10000) ? 10000 : backoff * 2; }
     }

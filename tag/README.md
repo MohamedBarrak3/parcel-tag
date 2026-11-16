@@ -1,6 +1,6 @@
 # Tag firmware (ESP32 DevKit V1)
 
-`main_tag_v18_profile/main_tag_v18_profile.ino` is the firmware: events (tap, drop, impact, upside_down, tamper, temp_breach), flash log, Wi-Fi upload, the OLED screen with knob and push button, and the handling profile (FRAGILE yes/no, TEMP MODE cold / room / medication; an alert stays on the screen with the red LED on until the button is pressed). It runs on the box (tested by Sarah, 15 Nov 2026).
+`main_tag_v19/main_tag_v19.ino` is the firmware: events (tap, drop, impact, upside_down, tamper, temp_breach), flash log, Wi-Fi upload, the OLED screen with knob and push button, and the handling profile (FRAGILE yes/no, TEMP MODE cold / room / medication; an alert stays on the screen with the red LED on until the button is pressed). v19 also sends the profile to the backend with each upload, so the dashboard shows it (compiles; v18 without this ran on the box, 15 Nov 2026).
 
 The sketch is in its own folder because the Arduino IDE needs the folder name to match the .ino name. Wiring, serial commands and the change history are in the comment at the top of the sketch.
 

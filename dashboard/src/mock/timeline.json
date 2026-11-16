@@ -1,6 +1,7 @@
 {
   "B001": {
     "box_id": "B001", "status": "severe",
+    "profile": {"fragile": true, "temp_mode": "room", "temp_min_c": 5.0, "temp_max_c": 30.0},
     "liable": [
       {"badge_id": "4BBEF804", "name": "Driver B", "reason": "drop 0.8 m"},
       {"badge_id": "4BBEF804", "name": "Driver B", "reason": "tamper"},
@@ -18,6 +19,7 @@
   },
   "B002": {
     "box_id": "B002", "status": "warning",
+    "profile": {"fragile": false, "temp_mode": "cold", "temp_min_c": 0.0, "temp_max_c": 10.0},
     "liable": [
       {"badge_id": "DEADBEEF", "name": null, "reason": "drop 0.2 m"}
     ],
@@ -30,6 +32,7 @@
   },
   "B003": {
     "box_id": "B003", "status": "ok",
+    "profile": null,
     "liable": [],
     "events": []
   }

@@ -17,6 +17,7 @@ def scenario(box):
     return {
         "box_id": box,
         "uploaded_at_uptime_ms": 25000,
+        "profile": {"fragile": True, "temp_mode": "room", "temp_min_c": 5.0, "temp_max_c": 30.0},
         "events": [
             ev(box, 1, 1000, "tap", badge_id=A),
             ev(box, 2, 5000, "tap", badge_id=B),
