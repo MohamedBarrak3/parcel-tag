@@ -1,14 +1,14 @@
 import { reasonText } from '../labels'
 
-// Who is responsible, grouped by person: "Driver B — a drop of 0.8 m, opening the lid"
+// Who is responsible, grouped by person: "Driver B · 3 problems: a drop of 0.8 m, opening the lid, ..."
 function LiabilityCard({ liable }) {
   if (liable.length === 0) {
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-        <span className="text-2xl">✅</span>
+      <div className="flex items-center gap-4 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] p-5">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-400/15 text-xl">✓</span>
         <div>
-          <h2 className="font-semibold text-emerald-800">Nobody is responsible for damage</h2>
-          <p className="text-sm text-emerald-700">No problem was recorded while anyone held this box.</p>
+          <h2 className="font-display text-lg font-semibold text-emerald-200">Nobody is responsible for damage</h2>
+          <p className="text-sm text-emerald-300/70">No problem was recorded while anyone held this box.</p>
         </div>
       </div>
     )
@@ -28,17 +28,22 @@ function LiabilityCard({ liable }) {
   }
 
   return (
-    <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-      <h2 className="mb-1 flex items-center gap-2 font-semibold text-red-800">
-        <span className="text-xl">⚖️</span> Responsible
-      </h2>
-      <p className="mb-3 text-sm text-red-700">The person holding the box when each problem happened.</p>
+    <div className="relative overflow-hidden rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/15 via-rose-500/[0.06] to-transparent p-5">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500/20 text-xl">⚖️</span>
+        <div>
+          <h2 className="font-display text-lg font-semibold text-rose-100">Responsible</h2>
+          <p className="text-sm text-rose-200/70">Who was holding the box when each problem happened</p>
+        </div>
+      </div>
       <ul className="flex flex-col gap-2">
         {people.map((p) => (
-          <li key={p.badge_id} className="rounded-xl bg-white/70 px-4 py-3">
-            <span className="font-semibold text-slate-900">{p.name}</span>
-            <span className="text-slate-500"> · {p.reasons.length} problem{p.reasons.length > 1 ? 's' : ''}: </span>
-            <span className="text-slate-700">{p.reasons.join(', ')}</span>
+          <li key={p.badge_id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+            <span className="font-display text-base font-semibold text-white">{p.name}</span>
+            <span className="rounded-full bg-rose-500/20 px-2.5 py-0.5 text-xs font-semibold text-rose-200">
+              {p.reasons.length} problem{p.reasons.length > 1 ? 's' : ''}
+            </span>
+            <span className="text-sm text-slate-300">{p.reasons.join(' · ')}</span>
           </li>
         ))}
       </ul>

@@ -1,15 +1,48 @@
-// Plain-language words for everything the backend sends, so the dashboard reads like sentences
+// Plain-language words and colours for everything the backend sends
 
 export const STATUS = {
-  ok: { word: 'All good', dot: 'bg-emerald-500', pill: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
-  warning: { word: 'Warning', dot: 'bg-amber-500', pill: 'bg-amber-50 text-amber-800 ring-amber-200' },
-  severe: { word: 'Serious problem', dot: 'bg-red-500', pill: 'bg-red-50 text-red-700 ring-red-200' },
+  ok: {
+    word: 'All good',
+    dot: 'bg-emerald-400',
+    pill: 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/30',
+    bar: 'from-emerald-400 to-teal-400',
+    glow: 'hover:shadow-emerald-500/10',
+  },
+  warning: {
+    word: 'Warning',
+    dot: 'bg-amber-400',
+    pill: 'bg-amber-400/10 text-amber-300 ring-amber-400/30',
+    bar: 'from-amber-400 to-orange-400',
+    glow: 'hover:shadow-amber-500/15',
+  },
+  severe: {
+    word: 'Serious problem',
+    dot: 'bg-rose-500',
+    pill: 'bg-rose-500/10 text-rose-300 ring-rose-400/30',
+    bar: 'from-rose-500 to-fuchsia-500',
+    glow: 'hover:shadow-rose-500/20',
+  },
 }
 
 export const SEVERITY = {
-  info: { word: 'Info', pill: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400', card: 'border-slate-200 bg-white' },
-  warning: { word: 'Warning', pill: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500', card: 'border-amber-200 bg-amber-50/60' },
-  severe: { word: 'Serious', pill: 'bg-red-100 text-red-700', dot: 'bg-red-500', card: 'border-red-200 bg-red-50/60' },
+  info: {
+    word: 'Info',
+    pill: 'bg-white/10 text-slate-300',
+    card: 'border-white/10 bg-white/[0.03]',
+    icon: 'bg-slate-800 ring-white/10',
+  },
+  warning: {
+    word: 'Warning',
+    pill: 'bg-amber-400/15 text-amber-300',
+    card: 'border-amber-400/25 bg-amber-400/[0.06]',
+    icon: 'bg-amber-950 ring-amber-400/40',
+  },
+  severe: {
+    word: 'Serious',
+    pill: 'bg-rose-500/15 text-rose-300',
+    card: 'border-rose-400/30 bg-rose-500/[0.07]',
+    icon: 'bg-rose-950 ring-rose-400/50',
+  },
 }
 
 export const ROLE = {

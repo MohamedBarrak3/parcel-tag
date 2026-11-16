@@ -65,7 +65,7 @@ function BoxDetail({ boxId, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="mb-6 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-blue-600 hover:bg-blue-50"
+        className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-white/10"
       >
         &larr; All boxes
       </button>
@@ -73,7 +73,7 @@ function BoxDetail({ boxId, onBack }) {
       {error && <BackendBanner error={error} />}
 
       {!timeline ? (
-        !error && <p className="text-slate-500">Loading…</p>
+        !error && <p className="text-slate-400">Loading…</p>
       ) : (
         <BoxView timeline={timeline} newSeqs={newSeqs} />
       )}
@@ -81,28 +81,37 @@ function BoxDetail({ boxId, onBack }) {
   )
 }
 
+const PANEL = 'rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/30 backdrop-blur'
+const LABEL = 'text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500'
+
 // The handovers, in order: Warehouse A → Driver B → Client C
 function CustodyChain({ events }) {
   const taps = events.filter((e) => e.type === 'tap')
   if (taps.length === 0) {
-    return <p className="text-sm text-slate-500">Nobody has tapped a badge on this box yet.</p>
+    return <p className="text-sm text-slate-400">Nobody has tapped a badge on this box yet.</p>
   }
   return (
     <ol className="flex flex-wrap items-center gap-2">
-      {taps.map((t, i) => (
-        <li key={t.seq} className="flex items-center gap-2">
-          {i > 0 && <span className="text-slate-300">→</span>}
-          <span
-            className={`rounded-xl border px-3 py-2 text-sm ${
-              i === taps.length - 1 ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-white'
-            }`}
-          >
-            <span className="font-semibold text-slate-800">{personName(t.holder)}</span>
-            {roleText(t.holder) && <span className="text-slate-500"> · {roleText(t.holder)}</span>}
-            <span className="block text-xs text-slate-400">from {clock(t.time)}</span>
-          </span>
-        </li>
-      ))}
+      {taps.map((t, i) => {
+        const current = i === taps.length - 1
+        return (
+          <li key={t.seq} className="flex items-center gap-2">
+            {i > 0 && <span className="text-lg text-slate-600">⟶</span>}
+            <span
+              className={`rounded-2xl border px-4 py-2.5 ${
+                current ? 'border-sky-400/40 bg-sky-400/10 shadow-lg shadow-sky-500/10' : 'border-white/10 bg-white/[0.03]'
+              }`}
+            >
+              <span className="font-display font-semibold text-white">{personName(t.holder)}</span>
+              {roleText(t.holder) && <span className="text-sm text-slate-400"> · {roleText(t.holder)}</span>}
+              <span className="block font-mono text-[11px] text-slate-500">
+                {current ? 'holds it since ' : 'from '}
+                {clock(t.time)}
+              </span>
+            </span>
+          </li>
+        )
+      })}
     </ol>
   )
 }
@@ -114,24 +123,31 @@ function BoxView({ timeline, newSeqs }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-bold text-slate-900">📦 Box {timeline.box_id}</h1>
-          <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-semibold ring-1 ${st.pill}`}>
-            <span className={`h-2.5 w-2.5 rounded-full ${st.dot}`} />
+      <div className={`${PANEL} relative overflow-hidden`}>
+        <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${st.bar}`} />
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-3xl ring-1 ring-white/10">📦</span>
+            <div>
+              <div className={LABEL}>Parcel</div>
+              <h1 className="font-display text-4xl font-bold tracking-tight text-white">{timeline.box_id}</h1>
+            </div>
+          </div>
+          <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ring-1 ${st.pill}`}>
+            <span className={`h-2 w-2 rounded-full ${st.dot}`} />
             {st.word}
           </span>
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Now held by</div>
-            <div className="text-lg text-slate-800">
+            <div className={LABEL}>Now held by</div>
+            <div className="mt-1 text-xl font-medium text-slate-100">
               {lastHolder ? personName(lastHolder) : 'Nobody yet'}
-              {roleText(lastHolder) && <span className="text-slate-500"> · {roleText(lastHolder)}</span>}
+              {roleText(lastHolder) && <span className="font-normal text-slate-400"> · {roleText(lastHolder)}</span>}
             </div>
           </div>
           <div>
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">Handling profile</div>
+            <div className={`${LABEL} mb-2`}>Handling profile</div>
             <ProfileBadge profile={timeline.profile} size="sm" />
           </div>
         </div>
@@ -139,20 +155,20 @@ function BoxView({ timeline, newSeqs }) {
 
       <LiabilityCard liable={timeline.liable} />
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-3 font-semibold text-slate-900">Chain of custody</h2>
+      <section className={PANEL}>
+        <h2 className="mb-4 font-display text-lg font-semibold text-white">Chain of custody</h2>
         <CustodyChain events={events} />
       </section>
 
       <section>
-        <h2 className="mb-3 flex items-baseline justify-between font-semibold text-slate-900">
+        <h2 className="mb-4 flex items-baseline justify-between font-display text-lg font-semibold text-white">
           What happened
-          <span className="text-sm font-normal text-slate-400">newest first</span>
+          <span className="font-sans text-xs font-normal uppercase tracking-[0.15em] text-slate-500">newest first</span>
         </h2>
         {events.length === 0 ? (
-          <p className="text-slate-500">No events yet.</p>
+          <p className="text-slate-400">No events yet.</p>
         ) : (
-          <ol className="relative flex flex-col gap-3 before:absolute before:bottom-3 before:left-[17px] before:top-3 before:w-px before:bg-slate-200">
+          <ol className="relative flex flex-col gap-3 before:absolute before:bottom-4 before:left-[19px] before:top-4 before:w-px before:bg-gradient-to-b before:from-white/20 before:to-transparent">
             {[...events].reverse().map((event) => (
               <EventItem key={event.seq} event={event} isNew={newSeqs.has(event.seq)} />
             ))}
