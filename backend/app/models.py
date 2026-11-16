@@ -16,6 +16,15 @@ class Box(Base):
     box_id: Mapped[str] = mapped_column(primary_key=True)
     first_seen: Mapped[datetime]
 
+class BoxProfile(Base):
+    """The handling profile chosen on the tag (latest upload wins)."""
+    __tablename__ = "box_profiles"
+    box_id: Mapped[str] = mapped_column(ForeignKey("boxes.box_id"), primary_key=True)
+    fragile: Mapped[bool]
+    temp_mode: Mapped[str]  # cold, room or medication
+    temp_min_c: Mapped[float]
+    temp_max_c: Mapped[float]
+
 class Handler(Base):
     __tablename__ = "handlers"
     badge_id: Mapped[str] = mapped_column(primary_key=True)

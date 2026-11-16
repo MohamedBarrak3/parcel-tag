@@ -54,3 +54,57 @@ def test_registering_client_later_makes_tamper_expected():
     t = client.get("/api/boxes/B001/timeline").json()
     assert t["events"][1]["expected"] is True
     assert t["status"] == "ok"
+
+FRAGILE_ROOM = {"fragile": True, "temp_mode": "room", "temp_min_c": 5.0, "temp_max_c": 30.0}
+
+def send(client, events, profile=None, at=20000):
+    body = {"box_id": "B001", "uploaded_at_uptime_ms": at, "events": events}
+    if profile is not None:
+        body["profile"] = profile
+    return client.post("/api/upload", json=body)
+
+def test_profile_shown_in_boxes_and_timeline():
+    client, _ = make_client()
+    assert send(client, STORY, FRAGILE_ROOM).status_code == 200
+    assert client.get("/api/boxes").json()[0]["profile"] == FRAGILE_ROOM
+    assert client.get("/api/boxes/B001/timeline").json()["profile"] == FRAGILE_ROOM
+
+def test_no_profile_is_null():
+    client, _ = make_client()
+    upload(client, STORY)
+    assert client.get("/api/boxes").json()[0]["profile"] is None
+    assert client.get("/api/boxes/B001/timeline").json()["profile"] is None
+
+def test_profile_only_upload_with_no_events():
+    client, _ = make_client()
+    send(client, STORY, FRAGILE_ROOM)
+    cold = {"fragile": False, "temp_mode": "cold", "temp_min_c": 0.0, "temp_max_c": 10.0}
+    r = send(client, [], cold, at=30000)
+    assert r.status_code == 200 and r.json() == {"ack_seq": 3}
+    assert client.get("/api/boxes").json()[0]["profile"] == cold
+    assert len(client.get("/api/boxes/B001/timeline").json()["events"]) == 3
+
+def test_profile_only_upload_from_a_new_box():
+    client, _ = make_client()
+    r = send(client, [], FRAGILE_ROOM)
+    assert r.json() == {"ack_seq": 0}
+    box = client.get("/api/boxes").json()[0]
+    assert box["profile"] == FRAGILE_ROOM and box["status"] == "ok"
+
+def test_upload_without_profile_keeps_the_last_one():
+    client, _ = make_client()
+    send(client, STORY, FRAGILE_ROOM)
+    upload(client, [{"seq": 4, "uptime_ms": 15000, "type": "tamper"}])
+    assert client.get("/api/boxes").json()[0]["profile"] == FRAGILE_ROOM
+
+def test_bad_temp_mode_is_rejected():
+    client, _ = make_client()
+    bad = dict(FRAGILE_ROOM, temp_mode="frozen")
+    assert send(client, STORY, bad).status_code == 422
+
+def test_reset_clears_the_profile():
+    client, _ = make_client()
+    send(client, STORY, FRAGILE_ROOM)
+    client.post("/api/reset")
+    send(client, [], None)
+    assert client.get("/api/boxes").json()[0]["profile"] is None

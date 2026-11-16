@@ -1,80 +1,55 @@
-const TYPE_LABELS = {
-  tap: 'Badge tap',
-  drop: 'Drop',
-  impact: 'Impact',
-  upside_down: 'Upside down',
-  tamper: 'Lid opened',
-  temp_breach: 'Temperature alert',
-}
-
-const SEVERITY_BORDER = {
-  info: 'border-gray-300',
-  warning: 'border-amber-400',
-  severe: 'border-red-400',
-}
-
-const SEVERITY_BG = {
-  info: 'bg-gray-50',
-  warning: 'bg-amber-50',
-  severe: 'bg-red-50',
-}
-
-const SEVERITY_DOT = {
-  info: 'bg-gray-400',
-  warning: 'bg-amber-500',
-  severe: 'bg-red-500',
-}
+import { EVENT_ICON, SEVERITY, ago, clock, eventTitle, personName, roleText } from '../labels'
 
 function EventItem({ event, isNew }) {
-  const holderText = !event.holder
-    ? 'Unassigned'
-    : event.holder.name
-      ? `${event.holder.name}${event.holder.role ? ` (${event.holder.role})` : ''}`
-      : 'Unknown badge'
-
-  const isTempBreach = event.type === 'temp_breach'
+  const sev = event.expected ? SEVERITY.info : (SEVERITY[event.severity] ?? SEVERITY.info)
+  const role = roleText(event.holder)
 
   return (
-    <div
-      className={`flex flex-col gap-3 rounded-2xl border-2 p-6 transition-colors duration-700 ${
-        SEVERITY_BORDER[event.severity]
-      } ${isNew ? 'bg-yellow-200' : SEVERITY_BG[event.severity]} ${
-        isTempBreach ? 'ring-4 ring-red-600' : ''
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className={`h-4 w-4 rounded-full ${SEVERITY_DOT[event.severity]}`} />
-          <span className="text-2xl font-bold text-gray-900">
-            {TYPE_LABELS[event.type]}
+    <li className="rise relative pl-14">
+      <span className={`absolute left-0 top-2.5 flex h-10 w-10 items-center justify-center rounded-xl text-lg ring-1 ${sev.icon}`}>
+        {EVENT_ICON[event.type] ?? '•'}
+      </span>
+      <div
+        className={`rounded-2xl border p-4 transition-colors duration-700 ${
+          isNew ? 'border-yellow-300/60 bg-yellow-300/15 shadow-lg shadow-yellow-500/10' : sev.card
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-display font-semibold text-white">{eventTitle(event)}</span>
+            {event.type !== 'tap' && (
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${sev.pill}`}>
+                {event.expected ? 'Expected' : sev.word}
+              </span>
+            )}
+            {isNew && (
+              <span className="rounded-full bg-yellow-300 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-yellow-950">
+                New
+              </span>
+            )}
+          </div>
+          <span className="font-mono text-xs text-slate-400" title={new Date(event.time).toLocaleString()}>
+            {clock(event.time)} · {ago(event.time)}
           </span>
-          {isTempBreach && (
-            <span className="rounded-full bg-red-600 px-3 py-1 text-base font-bold text-white">
-              ALERT
+        </div>
+
+        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
+          {event.type !== 'tap' ? (
+            <span>
+              Held by <span className="font-medium text-slate-200">{event.holder ? personName(event.holder) : 'nobody yet'}</span>
+              {role && ` · ${role}`}
             </span>
+          ) : (
+            role && <span>{role}</span>
           )}
-          {event.expected && (
-            <span className="rounded-full bg-gray-200 px-3 py-1 text-base font-semibold text-gray-700">
-              expected
+          {event.temp_c != null && (
+            <span className={`font-mono ${event.type === 'temp_breach' ? 'font-semibold text-rose-300' : ''}`}>
+              {event.temp_c} °C{event.hum_pct != null && ` · ${event.hum_pct} % RH`}
             </span>
           )}
         </div>
-        <span className="text-lg text-gray-500">
-          {new Date(event.time).toLocaleString()}
-        </span>
       </div>
-
-      <div className="text-xl text-gray-800">{holderText}</div>
-
-      <div className="flex gap-6 text-lg text-gray-600">
-        {event.temp_c != null && event.hum_pct != null && (
-          <span className={isTempBreach ? 'font-bold text-red-600' : ''}>
-            {event.temp_c} °C · {event.hum_pct} %
-          </span>
-        )}
-        {event.height_m != null && <span>≈{event.height_m} m</span>}
-      </div>
-    </div>
+    </li>
   )
 }
 

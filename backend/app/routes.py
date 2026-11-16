@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import Session
-from app.models import SessionLocal, Box, Event, Handler
+from app.models import SessionLocal, Box, BoxProfile, Event, Handler
 from app.custody import apply_custody
 
 router = APIRouter(prefix="/api")
@@ -36,9 +36,18 @@ class EventIn(BaseModel):
     hum_pct: float | None = None
     badge_id: str | None = None
 
+TempMode = Literal["cold", "room", "medication"]
+
+class ProfileIn(BaseModel):
+    fragile: bool
+    temp_mode: TempMode
+    temp_min_c: float
+    temp_max_c: float
+
 class UploadIn(BaseModel):
     box_id: str
     uploaded_at_uptime_ms: int
+    profile: ProfileIn | None = None  # optional: older tags do not send it
     events: list[EventIn]
 
 class HandlerIn(BaseModel):
@@ -56,6 +65,10 @@ def upload(body: UploadIn, db: Session = Depends(get_db)):
 
     if db.get(Box, body.box_id) is None:
         db.add(Box(box_id=body.box_id, first_seen=received))
+        db.flush()
+
+    if body.profile is not None:
+        db.merge(BoxProfile(box_id=body.box_id, **body.profile.model_dump()))
 
     known = set(db.scalars(select(Event.seq).where(Event.box_id == body.box_id)))
 
@@ -94,6 +107,7 @@ def add_handler(body: HandlerIn, db: Session = Depends(get_db)):
 @router.post("/reset")
 def reset(db: Session = Depends(get_db)):
     db.execute(delete(Event))
+    db.execute(delete(BoxProfile))
     db.execute(delete(Box))
     db.commit()
     return {"status": "reset"}
@@ -115,6 +129,14 @@ def person(badge_id, handlers):
     if h is None:
         return {"badge_id": badge_id, "name": "Unknown badge", "role": None}
     return {"badge_id": h.badge_id, "name": h.name, "role": h.role}
+
+def profile_of(db, box_id):
+    """The box's handling profile as a dict, or None if the tag never sent one."""
+    p = db.get(BoxProfile, box_id)
+    if p is None:
+        return None
+    return {"fragile": p.fragile, "temp_mode": p.temp_mode,
+            "temp_min_c": p.temp_min_c, "temp_max_c": p.temp_max_c}
 
 def box_status(events):
     severities = {e.severity for e in events if not e.expected}
@@ -138,6 +160,7 @@ def list_boxes(db: Session = Depends(get_db)):
             "status": box_status(events),
             "last_event_time": iso(last.event_time) if last else None,
             "current_holder": person(last.holder_badge_id, handlers) if last else None,
+            "profile": profile_of(db, box.box_id),
         })
     return result
 
@@ -158,6 +181,7 @@ def timeline(box_id: str, db: Session = Depends(get_db)):
     return {
         "box_id": box_id,
         "status": box_status(events),
+        "profile": profile_of(db, box_id),
         "liable": [
             {"badge_id": l["badge_id"],
              "name": person(l["badge_id"], handlers)["name"],
