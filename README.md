@@ -23,7 +23,7 @@ Firewall, so the tag can reach the laptop (PowerShell as administrator):
 From the repo root:
     .\start.ps1
 
-- Backend: http://localhost:8000 (API docs at /docs)
+- Backend: http://localhost:8000 
 - Dashboard: http://localhost:5173
 
 ## Restart the demo
